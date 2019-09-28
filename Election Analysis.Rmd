@@ -1,0 +1,303 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+editor_options:
+  chunk_output_type: inline
+---
+
+Background on Philippine Election System:
+
+Every three years, 12 senators are chosen by the popular vote (i.e. everyone votes, top 12 contestants with the highest votes win). There are multiple parties in the Philippines, and senators can either run with a party or independently. The members of the parties often change and unlike the US where people have strong pro-Democrat/pro-Republican sentiments, parties aren't as big of a deal in the Philippines. 
+
+Background on Data:
+
+The PulseAsia data consists of surveys taken monthly from January to May leading up to the elections which happen in the end of May. Each survey lists the percent of respondents who (1) are aware of and (2) are voting for a certain senator. 
+
+Overview of Analysis:
+
+Models were created based on the 2013 PulseAsia surveys to see if we could predict the 12 senators to win the  elections. The models were then run on both 2013 and 2016. The general logistic model predicted 11/12 senators for the 2013 data, and 10/12 senators for 2016.
+
+1. Does party affiliation affect chances of winning (i.e. do most candidates in the winning party win, and do most candidates in the losing party lose)? How did this change from 2013 to 2016 and 2019?
+2. How does province affect the chances of politicians/parties? 
+3. Did the party strength persist per province over the two elections (2016 and 2019)?
+4. We specify what datasets are available then generate a set of features/variables that can be used as input for the model. Model predictions for senatorial elections, based on % awareness, % voting, and party affiliation
+
+The data sets and libraries were loaded in.
+```{r, echo = FALSE, warnings = FALSE}
+library(dplyr)
+library(ggplot2)
+ELEC13 <- read.csv("Senators_2013.csv")
+for (i in c(7:39)){
+  ELEC13[,i] <- as.integer(ELEC13[,i])
+}
+ELECTotal <- ELEC13
+```
+
+The ELEC13 contains the percentage vote for each senator for each province.
+```{r, echo = FALSE, warnings = FALSE}
+VoteTot = rep(NA, 77830)
+
+for (i in c(1:77830)){
+  VoteTot[i] <- sum(ELEC13[i,c(7:39)])
+}
+ELEC13$VoteTot <- VoteTot
+
+ELEC13 <- ELEC13 %>% group_by(Region) %>% group_by(Province) %>% summarize(
+total = sum(Total.Registered.Voters, na.rm = TRUE), 
+Alcantara = sum(ALCANTARA..SAMSON..SJS., na.rm = TRUE), 
+Angara = sum(ANGARA..EDGARDO..LDP., na.rm = TRUE), 
+Aquino = sum(AQUINO..BENIGNO.BAM..LP., na.rm = TRUE), 
+Belgica = sum(BELGICA..GRECO..DPP., na.rm = TRUE), 
+Binay = sum(BINAY..NANCY..UNA., na.rm = TRUE), 
+Casino = sum(CASINO..TEDDY..MKB., na.rm = TRUE), 
+Cayetano = sum(CAYETANO..ALAN.PETER..NP., na.rm = TRUE), 
+Cojuangco = sum(COJUANGCO..TINGTING..UNA., na.rm = TRUE), 
+David = sum(DAVID..LITO..KPTRAN., na.rm = TRUE), 
+DelosReyes = sum(DELOS.REYES..JC..KPTRAN., na.rm = TRUE), 
+Ejercito = sum(EJERCITO.ESTRADA..JV..UNA., na.rm = TRUE), 
+Enrile = sum(ENRILE..JUAN.PONCE.JR..NPC., na.rm = TRUE), 
+Escudero = sum(ESCUDERO..CHIZ, na.rm = TRUE), 
+Falcone = sum(FALCONE..BAL..DPP., na.rm = TRUE), 
+Gordon = sum(GORDON..DICK..UNA., na.rm = TRUE), 
+Hagedorn = sum(HAGEDORN..ED, na.rm = TRUE), 
+Honasan = sum(HONASAN..GRINGO..UNA., na.rm = TRUE), 
+Hontiveros = sum(HONTIVEROS..RISA..AKBAYAN., na.rm = TRUE), 
+Legarda = sum(LEGARDA..LOREN..NPC., na.rm = TRUE), 
+Llasos = sum(LLASOS..MARWIL..KPTRAN., na.rm = TRUE), 
+Maceda = sum(MACEDA..MANONG.ERNIE..UNA., na.rm = TRUE), 
+Madrigal = sum(MADRIGAL..JAMBY..LP., na.rm = TRUE), 
+MagsaysayM = sum(MAGSAYSAY..MITOS..UNA., na.rm = TRUE), 
+MagsaysayR = sum(MAGSAYSAY..RAMON.JR...LP., na.rm = TRUE), 
+Montano = sum(MONTANO..MON, na.rm = TRUE), 
+Penson = sum(PENSON..RICARDO, na.rm = TRUE), 
+Pimentel = sum(PIMENTEL..KOKO..PDP., na.rm = TRUE), 
+Poe = sum(POE..GRACE, na.rm = TRUE), 
+Seneres = sum(SENERES..CHRISTIAN..DPP., na.rm = TRUE), 
+Trillanes = sum(TRILLANES..ANTONIO.IV..NP., na.rm = TRUE), 
+Villanueva = sum(VILLANUEVA..BRO.EDDIE..BP., na.rm = TRUE), 
+Villar = sum(VILLAR..CYNTHIA.HANEPBUHAY..NP., na.rm = TRUE), 
+Zubiri = sum(ZUBIRI..MIGZ..UNA., na.rm = TRUE),
+Votes = sum(VoteTot, na.rm = TRUE))
+for (i in c(3:35)){
+  ELEC13[,i] <- ELEC13[,i]/ELEC13$Votes
+}
+```
+
+The ELEC data frame contains the percentage vote for each party by province.
+```{r, echo = FALSE, warnings = FALSE}
+ELEC <- data.frame(Province = ELEC13$Province)
+ELEC$SJS <- ELEC13$Alcantara       
+ELEC$LDP <- ELEC13$Angara
+ELEC$LP <- (ELEC13$Aquino + ELEC13$Madrigal + ELEC13$MagsaysayR)
+ELEC$DPP <- (ELEC13$Belgica + ELEC13$Falcone + ELEC13$Seneres)
+ELEC$UNA <- (ELEC13$Binay + ELEC13$Cojuangco + ELEC13$Ejercito + ELEC13$Gordon + ELEC13$Honasan + ELEC13$Maceda + ELEC13$MagsaysayM + ELEC13$Zubiri)
+ELEC$MKB <- ELEC13$Casino
+ELEC$NP <- (ELEC13$Cayetano + ELEC13$Trillanes + ELEC13$Villar)
+ELEC$KPTRAN <- (ELEC13$David + ELEC13$DelosReyes + ELEC13$Llasos)
+ELEC$NPC <- (ELEC13$Enrile + ELEC13$Legarda)
+ELEC$AKBAYAN <- ELEC13$Hontiveros
+ELEC$BP <- ELEC13$Villanueva
+```
+
+Here we perform PCA analysis.
+```{r, echo = FALSE}
+elecPCA <- princomp(ELEC[,2:12], cor=TRUE)
+print(summary(elecPCA, digits = 3), loadings = elecPCA$loadings, cutoff = 0)
+```
+
+Biplot from PCA
+```{r, echo = FALSE}
+round(elecPCA$sdev^2,2)
+screeplot(elecPCA, type="lines", col="blue", pch=16, cex=1.2, main="Scree Plot of Raw Drug Attitude Data")
+round(elecPCA$loadings[,1:6],2)
+biplot(elecPCA,choices=c(1,2),pc.biplot=T, cex=.7)
+```
+
+95% Confidence Interval Ellipse for 2 Components
+```{r, echo = FALSE}
+ciscoreplot<-function(x,comps,namevec){
+  y1<-sqrt(5.99*(x$sdev[comps[1]]^2))
+  ymod<-y1-y1%%.05
+  y1vec<-c(-y1,seq(-ymod,ymod,by=0.05),y1)
+  y2vecpos<-sqrt((5.99-(y1vec^2)/x$sdev[comps[1]]^2)*x$sdev[comps[2]]^2)
+  y2vecneg<--sqrt((5.99-(y1vec^2)/x$sdev[comps[1]]^2)*x$sdev[comps[2]]^2)
+  y2vecpos[1]<-0
+  y2vecneg[1]<-0
+  y2vecpos[length(y2vecpos)]<-0
+  y2vecneg[length(y2vecneg)]<-0
+  plot(x$scores[,comps[1]],x$scores[,comps[2]],pch=19,cex=1.2,ylim=c(min(y2vecneg,x$scores[,comps[2]]),max(y2vecpos,x$scores[,comps[2]])),
+    main="PC Score Plot with 95% CI Ellipse", xlab=paste("Scores for PC",comps[1],sep=" "), ylab=paste("Scores for PC",comps[2],sep=" "),
+    xlim=c(min(y1vec,x$scores[,comps[1]]),max(y1vec,x$scores[,comps[1]])))
+  lines(y1vec,y2vecpos,col="Red",lwd=2)
+  lines(y1vec,y2vecneg,col="Red",lwd=2)
+  outliers<-((x$scores[,comps[1]]^2)/(x$sdev[comps[1]]^2)+(x$scores[,comps[2]]^2)/(x$sdev[comps[2]]^2))>5.99
+  points(x$scores[outliers,comps[1]],x$scores[outliers,comps[2]],pch=19,cex=1.2,col="Blue")
+  text(x$scores[outliers,comps[1]],x$scores[outliers,comps[2]],col="Blue",lab=namevec[outliers])
+}
+```
+```{r, echo = FALSE}
+par(mfrow=c(1,1))
+ciscoreplot(elecPCA,c(1,2), ELEC13$Province)
+```
+
+The density distributions (i.e. histograms of votes but turned into cumulative percentage) were plotted by party
+
+Legend doesn't work, interesting how far LP comes out on top. Also cool how distributions are all unimodal, evidence that in every province there is a certain percentage of voters for each party, interesting since I thought there would be provinces super pro party X and provinces super against party X (which should show a bimodal distribution)
+
+```{r, echo = FALSE, warnings = FALSE}
+partyPlot <- ggplot(data = ELEC) + 
+  geom_density(mapping=aes(x=ELEC$SJS), fill = "firebrick4", alpha = 0.6) + 
+  geom_density(mapping=aes(x=ELEC$LDP), fill = "orange", alpha = 0.6) + 
+  geom_density(mapping=aes(x=ELEC$LP), fill = "yellow", alpha = 0.6) + 
+  geom_density(mapping=aes(x=ELEC$DPP), fill = "chartreuse4", alpha = 0.6) + 
+  geom_density(mapping=aes(x=ELEC$UNA), fill = "lightseagreen", alpha = 0.6) + 
+  geom_density(mapping=aes(x=ELEC$MKB), fill = "violet", alpha = 0.6) + 
+  geom_density(mapping=aes(x=ELEC$NP), fill = "brown", alpha = 0.6) + 
+  geom_density(mapping=aes(x=ELEC$KPTRAN), fill = "blue3", alpha = 0.6) + 
+  geom_density(mapping=aes(x=ELEC$NPC), fill = "navyblue", alpha = 0.6) + 
+  geom_density(mapping=aes(x=ELEC$AKBAYAN), fill = "mediumturquoise", alpha = 0.6) +
+  geom_density(mapping=aes(x=ELEC$BP), fill = "pink", alpha = 0.6) + xlab("Percentage Vote") + ylab("Number of Provinces") 
+
+partyPlot + scale_color_manual(values=c("firebrick4", "orange","yellow","chartreuse4","lightseagreen","violet","brown","blue3","navyblue","mediumturquoise","pink"),labels=c("SJS", "LDP", "LP", "DPP", "UNA", "MKB", "NP", "KPTRAN", "NPC", "AKBAYAN", "BP"))
+```
+
+We then analyzed if there are correlations between pairs of votes by province. 
+
+SJS, MKB, DPP, and KPTRAN all appear to be strongly positively intercorrelated, as well as the pairing between LP and AKBAYAN.
+
+Strong negative correlations are seen between NP and DPP, and NP and KPTRAN.
+
+Interesting to examine how strong a hold these parties have/do not have on certain regions of the Philippines and how their competitors are able to ally (positive corr.) or block out competition (negative corr.). 
+```{r, echo = FALSE, warnings = FALSE}
+library(corrplot)
+elecCor = cor(ELEC[,c(2:12)])
+corrplot(elecCor, method="ellipse", order="hclust")
+```
+
+ELECsum data frame contains winning parties and candidates per province in 2013.
+```{r, echo = FALSE, warnings = FALSE}
+Max <- rep(NA, 84)
+for (i in c(1:84)){
+  Max[i] <- colnames(ELEC)[which.max(ELEC[i,c(2:12)]) + 1]
+}
+
+Max13 <- rep(NA, 84)
+for (i in c(1:84)){
+  Max13[i] <- colnames(ELEC13)[which.max(ELEC13[i,c(3:35)]) + 2]
+}
+
+ELECsum <- data.frame(Province = ELEC13$Province)
+ELECsum$Party <- Max
+ELECsum$Candidate <- Max13
+```
+
+Linear model generation based on awareness & vote predictions to predict percentage of final votes using data from January to May from Pulse Asia.
+```{r, echo = FALSE, warnings = FALSE, results = 'hide'}
+library(leaps)
+PULSE <- read.csv("Senators_2013 - PulseAsia.csv")
+FinalCount <- rep(NA, 33)
+for (i in c(7:39)){
+  FinalCount[i-6] <- sum(ELECTotal[c(1:77830),i])
+}
+PULSE$FinalCount <- FinalCount
+PULSE$FinalCount <- PULSE$FinalCount/sum(FinalCount)
+
+combinedPred <- lm(FinalCount ~ VoteJan + VoteFeb + VoteMar + VoteApr + VoteMay + AwareJan + AwareFeb + AwareMar + AwareApr + AwareMay, data = PULSE)
+summary(combinedPred)
+
+stepPred <- step(combinedPred, direction="backward")
+summary(stepPred)
+sink()
+```
+Stepwise regression determined that most important criteria are awareness in January and February (theory behind why?)
+
+Generating general logistic model on election results using January & February awareness and winners of senatorial race 2013 (1 for win, 0 for loss)
+```{r, echo = FALSE, warnings = FALSE, results = 'hide'}
+PULSE$Result <- c(0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 0)
+combinedResult <- glm(Result ~ AwareJan + AwareFeb, data = PULSE, family = "binomial")
+summary(combinedResult)
+```
+
+Result checking (GLM) produces 93% accuracy rate on 2013 data
+```{r, echo = FALSE, warnings = FALSE}
+pclasses <- fitted(combinedResult) >= 0.5
+tbl <- table(predicted = pclasses, actual = PULSE$Result)
+(tbl[1,1] + tbl[2,2])/sum(tbl)
+```
+
+Used linear and logistic models to predict 2016 senatorial winners.
+```{r, echo = FALSE, warnings = FALSE}
+PULSE16 <- read.csv("Senators_2013 - PulseAsia2016.csv")
+sen16pred <- predict(combinedPred, PULSE16[,c(2:11)])
+pred16pred <- data.frame(name = PULSE16$X, score = sen16pred)
+pred16pred <- pred16pred[order(-pred16pred$score),]
+```
+
+Linear Model: 6/12 
+
+1. PALPARAN 
+
+2. PACQUIAO  
+
+3. LACSAMANA  
+
+4. MANZANO  
+
+5. LAPID  
+
+6. ROMUALDEZ  
+
+7. DRILON  
+
+8. RECTO  
+
+9. PANGILINAN  
+
+10. GATCHALIAN 
+
+11. LANGIT 
+
+12. HONTIVEROS 
+
+Predicting 2013 senatorial elections
+```{r}
+sen13res <- predict(combinedResult, PULSE[,c(2:11)])
+pred13res <- data.frame(name = PULSE$X, score = sen13res)
+pred13res <- pred13res[order(-pred13res$score),]
+pred13res
+```
+
+Predicting 2016 senatorial elections
+```{r, echo = FALSE, warnings = FALSE}
+sen16res <- predict(combinedResult, PULSE16[,c(2:11)])
+pred16res <- data.frame(name = PULSE16$X, score = sen16res)
+pred16res <- pred16res[order(-pred16res$score),]
+```
+
+Logistic Model: 10/12 
+
+1. PACQUIAO 
+
+2. LACSON 
+
+3. SOTTO 
+
+4. RECTO 
+
+5. DRILON 
+
+6. PANGILINAN 
+
+7. MANZANO 
+
+8. LACSAMANA 
+
+9. ZUBIRI 
+
+10. DELIMA 
+
+11. GORDON 
+
+12. GATCHALIAN 

@@ -1,0 +1,308 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+editor_options:
+  chunk_output_type: inline
+---
+
+ELEC13: Percent vote for senators by province
+```{r, echo = FALSE, warnings = FALSE}
+library(dplyr)
+library(ggplot2)
+ELEC13 <- read.csv("Senators_2013.csv")
+for (i in c(7:39)){
+  ELEC13[,i] <- as.integer(ELEC13[,i])
+}
+  
+VoteTot = rep(NA, 77830)
+
+for (i in c(1:77830)){
+  VoteTot[i] <- sum(ELEC13[i,c(7:39)])
+}
+ELEC13$VoteTot <- VoteTot
+
+ELEC13 <- ELEC13 %>% group_by(Region) %>% group_by(Province) %>% summarize(
+total = sum(Total.Registered.Voters, na.rm = TRUE), 
+Alcantara = sum(ALCANTARA..SAMSON..SJS., na.rm = TRUE), 
+Angara = sum(ANGARA..EDGARDO..LDP., na.rm = TRUE), 
+Aquino = sum(AQUINO..BENIGNO.BAM..LP., na.rm = TRUE), 
+Belgica = sum(BELGICA..GRECO..DPP., na.rm = TRUE), 
+Binay = sum(BINAY..NANCY..UNA., na.rm = TRUE), 
+Casino = sum(CASINO..TEDDY..MKB., na.rm = TRUE), 
+Cayetano = sum(CAYETANO..ALAN.PETER..NP., na.rm = TRUE), 
+Cojuangco = sum(COJUANGCO..TINGTING..UNA., na.rm = TRUE), 
+David = sum(DAVID..LITO..KPTRAN., na.rm = TRUE), 
+DelosReyes = sum(DELOS.REYES..JC..KPTRAN., na.rm = TRUE), 
+Ejercito = sum(EJERCITO.ESTRADA..JV..UNA., na.rm = TRUE), 
+Enrile = sum(ENRILE..JUAN.PONCE.JR..NPC., na.rm = TRUE), 
+Escudero = sum(ESCUDERO..CHIZ, na.rm = TRUE), 
+Falcone = sum(FALCONE..BAL..DPP., na.rm = TRUE), 
+Gordon = sum(GORDON..DICK..UNA., na.rm = TRUE), 
+Hagedorn = sum(HAGEDORN..ED, na.rm = TRUE), 
+Honasan = sum(HONASAN..GRINGO..UNA., na.rm = TRUE), 
+Hontiveros = sum(HONTIVEROS..RISA..AKBAYAN., na.rm = TRUE), 
+Legarda = sum(LEGARDA..LOREN..NPC., na.rm = TRUE), 
+Llasos = sum(LLASOS..MARWIL..KPTRAN., na.rm = TRUE), 
+Maceda = sum(MACEDA..MANONG.ERNIE..UNA., na.rm = TRUE), 
+Madrigal = sum(MADRIGAL..JAMBY..LP., na.rm = TRUE), 
+MagsaysayM = sum(MAGSAYSAY..MITOS..UNA., na.rm = TRUE), 
+MagsaysayR = sum(MAGSAYSAY..RAMON.JR...LP., na.rm = TRUE), 
+Montano = sum(MONTANO..MON, na.rm = TRUE), 
+Penson = sum(PENSON..RICARDO, na.rm = TRUE), 
+Pimentel = sum(PIMENTEL..KOKO..PDP., na.rm = TRUE), 
+Poe = sum(POE..GRACE, na.rm = TRUE), 
+Seneres = sum(SENERES..CHRISTIAN..DPP., na.rm = TRUE), 
+Trillanes = sum(TRILLANES..ANTONIO.IV..NP., na.rm = TRUE), 
+Villanueva = sum(VILLANUEVA..BRO.EDDIE..BP., na.rm = TRUE), 
+Villar = sum(VILLAR..CYNTHIA.HANEPBUHAY..NP., na.rm = TRUE), 
+Zubiri = sum(ZUBIRI..MIGZ..UNA., na.rm = TRUE),
+Votes = sum(VoteTot, na.rm = TRUE))
+for (i in c(3:35)){
+  ELEC13[,i] <- ELEC13[,i]/ELEC13$Votes
+}
+```
+
+prty13: Average share of votes (average percent of votes) for a senator in the party per province
+```{r, echo = FALSE, warnings = FALSE}
+prty13 <- data.frame(Province = ELEC13$Province)
+prty13$SJS <- ELEC13$Alcantara       
+prty13$LDP <- ELEC13$Angara
+prty13$LP <- (ELEC13$Aquino + ELEC13$Madrigal + ELEC13$MagsaysayR)/3
+prty13$DPP <- (ELEC13$Belgica + ELEC13$Falcone + ELEC13$Seneres)/3
+prty13$UNA <- (ELEC13$Binay + ELEC13$Cojuangco + ELEC13$Ejercito + ELEC13$Gordon + ELEC13$Honasan + ELEC13$Maceda + ELEC13$MagsaysayM + ELEC13$Zubiri)/8
+prty13$MKB <- ELEC13$Casino
+prty13$NP <- (ELEC13$Cayetano + ELEC13$Trillanes + ELEC13$Villar)/3
+prty13$KPTRAN <- (ELEC13$David + ELEC13$DelosReyes + ELEC13$Llasos)/3
+prty13$NPC <- (ELEC13$Enrile + ELEC13$Legarda)/2
+prty13$AKBAYAN <- ELEC13$Hontiveros
+prty13$BP <- ELEC13$Villanueva
+
+prty13 <- prty13[order(prty13$Province),]
+```
+
+ELEC19: Percent vote for senators by province
+```{r, echo = FALSE, warnings = FALSE}
+ELEC19 <- read.csv("sen19.csv")
+rownames(ELEC19) <- ELEC19[,1]
+ELEC19 <- ELEC19[,2:64]
+for (i in 1:63){
+  ELEC19[,i] <- ELEC19[,i]/ELEC19$Total
+}
+```
+
+prty19: Average share of votes (average percent of votes) for a senator in the party per province
+```{r, echo = FALSE, warnings = FALSE}
+#which(endsWith(colnames(ELEC19), "..NP."))
+#which(endsWith(colnames(ELEC19), "..LAKAS."))
+#which(endsWith(colnames(ELEC19), "..LP."))
+#which(endsWith(colnames(ELEC19), "..NPC."))
+#which(endsWith(colnames(ELEC19), "..PDPLBN."))
+#which(endsWith(colnames(ELEC19), "..IND."))
+
+prty19 <- data.frame(Province = rownames(ELEC19))
+prty19$NP <- (ELEC19[,19] + ELEC19[,46] + ELEC19[,62])/3  
+prty19$LAKAS <- (ELEC19[,16] + ELEC19[,51])/2  
+prty19$LP <- (ELEC19[,5] + ELEC19[,9] + ELEC19[,25] + ELEC19[,36] + ELEC19[,57] + ELEC19[,59])/6
+prty19$NPC <- (ELEC19[,26] + ELEC19[,40])/2
+prty19$PDPLBN <- (ELEC19[,24] + ELEC19[,34] + ELEC19[,44] + ELEC19[,54] + ELEC19[,60])/5
+prty19$IND <- (ELEC19[,1] + ELEC19[,3] + ELEC19[,6]+ ELEC19[,11]+ ELEC19[,17]+ ELEC19[,28]+ ELEC19[,31]+ ELEC19[,33]+ ELEC19[,38]+ ELEC19[,41]+ ELEC19[,42]+ ELEC19[,43]+ ELEC19[,45]+ ELEC19[,49]+ ELEC19[,50]+ ELEC19[,52]+ ELEC19[,55])/17
+
+boxplot(prty19[,c(2:7)])
+prty19 <- prty19[order(prty19$Province),]
+```
+
+## Party Affiliation & Strength
+
+### Did provinces support the same parties throughout 2013, 2016, 2019?
+
+Plot of difference in average share of votes received by candidates in party X in a province of 2013 and 2019 (orange - NP, green - NPC, yellow - LP, blue - PDP)
+```{r, echo = FALSE, warnings = FALSE}
+mean(prty19$NP - prty13$NP)
+diffNP <- prty19$NP - prty13$NP 
+diffNPC <- prty19$NPC - prty13$NPC
+diffLP <- prty19$LP - prty13$LP
+diffPDP <- prty19$PDPLBN - prty13$UNA
+differences <- data.frame(provinces = prty13$Province, NP = diffNP, NPC = diffNPC, LP = diffLP, PDP = diffPDP)
+library(ggplot2)
+ggplot(data = differences) + 
+  geom_density(mapping=aes(x=differences$NP), fill = "orange", alpha = 0.6) +
+  geom_density(mapping=aes(x=differences$NPC), fill = "green", alpha = 0.6) +
+  geom_density(mapping=aes(x=differences$LP), fill = "yellow", alpha = 0.6) +
+  geom_density(mapping=aes(x=differences$PDP), fill = "blue3", alpha = 0.6) 
+
+#cor(diffNP, diffNPC)^2
+#cor(diffNP, diffLP)^2
+#cor(diffNP, diffPDP)^2
+#cor(diffNPC, diffLP)^2
+#cor(diffNPC, diffLP)^2
+#cor(diffNPC, diffPDP)^2
+#cor(diffLP, diffPDP)^2
+```
+
+#### Which provinces voted for PDP Laban?
+```{r, echo = FALSE, warnings = FALSE}
+proPDP2019 <- prty19$Province[which(prty19$PDPLBN > prty19$NP & prty19$PDPLBN > prty19$LAKAS & prty19$PDPLBN > prty19$LP & prty19$PDPLBN > prty19$NPC)]
+proPDP2019
+```
+
+pres16: Number of votes for president 
+```{r, echo = FALSE, warnings = FALSE}
+pres16 <- read.csv("pres2016.csv")
+pres16 <- pres16 %>% group_by(province_name) %>% summarize(
+binay = sum(binay, na.rm = TRUE), 
+roxas = sum(roxas, na.rm = TRUE), 
+poe = sum(poe, na.rm = TRUE), 
+seneres = sum(seneres, na.rm = TRUE), 
+defensor = sum(defensor, na.rm = TRUE), 
+duterte = sum(duterte, na.rm = TRUE))
+
+pres16 <- pres16[order(pres16$province_name),]
+```
+
+vp16: Number of votes for vice president 
+```{r, echo = FALSE, warnings = FALSE}
+vp16 <- read.csv("vp2016.csv")
+vp16 <- vp16 %>% group_by(province_name) %>% summarize(
+honasan = sum(honasan, na.rm = TRUE), 
+marcos = sum(marcos, na.rm = TRUE), 
+trillanes = sum(trillanes, na.rm = TRUE), 
+robredo = sum(robredo, na.rm = TRUE), 
+escudero = sum(escudero, na.rm = TRUE), 
+cayetano = sum(cayetano, na.rm = TRUE))
+```
+
+#### Are they the same provinces that supported Duterte?
+Provinces supporting Duterte in 2016 and PDP in 2019
+```{r, echo = FALSE, warnings = FALSE}
+proDuterte2016 <- pres16$province_name[which(pres16$duterte > pres16$binay & pres16$duterte > pres16$roxas & pres16$duterte > pres16$poe & pres16$duterte > pres16$seneres & pres16$duterte > pres16$defensor)]
+
+intersect(proDuterte2016, proPDP2019)
+```
+
+Provinces voting Duterte in 2016 that didn't vote PDP in 2019
+```{r, echo = FALSE, warnings = FALSE}
+setdiff(proDuterte2016, proPDP2019)
+```
+
+Provinces voting PDP in 2019 that didn't vote Duterte in 2016 
+```{r, echo = FALSE, warnings = FALSE}
+setdiff(proPDP2019, proDuterte2016)
+```
+
+#### Data Visualization
+
+The average % of votes a candidate in a party received was calculated as
+
+% votes received by party / # party members
+
+I then took the difference of the average % of votes per candidate received in the 2013 and 2019 elections for NP, NPC, LP, and PDP-Laban parties. Positive values indicate that on the average, a candidate received more support from a particular province in 2019 than 2013, while a negative value meant it received less support. 
+
+The difference in average % of votes received candidate between 2013 and 2019 were then plotted by province.
+
+Legend: 
+* Yellow indicates high difference values (i.e. an average candidate in this party received more support in 2019 than 2013)
+* Red indicates low difference values (i.e. an average candidate in this party received little or even less support in 2019 than 2013)
+```{r, echo = FALSE, warnings = FALSE}
+library(rgdal)     # R wrapper around GDAL/OGR
+library(ggplot2)   # for general plotting
+library(maptools)
+library(raster)
+s <- shapefile("/Users/lorenzoflores/Desktop/Yale_Academic/Stat Projects/Election Analysis/Provinces.shp")
+
+differences$provinces <- as.character(differences$provinces)
+differences$provinces[69] <- "SAMAR"
+differences$provinces[28] <- "DAVAO DEL NORTE"
+differences$provinces[27] <- "NORTH COTABATO"
+differences[51,2:5] <- (differences[51,2:5] + differences[52,2:5] + differences[53,2:5] + differences[54,2:5])/4
+differences$provinces[51] <- "METROPOLITAN MANILA"
+differences <- differences[-c(52:54),]
+s <- s[-68,]
+
+differences <- differences[order(differences$provinces),]
+s <- s[order(s$NAME_1),]
+
+map2color<-function(x,pal,limits=NULL){
+    if(is.null(limits)) limits=range(x)
+    pal[findInterval(x,seq(limits[1],limits[2],length.out=length(pal)+1), all.inside=TRUE)]
+}
+
+s$NP <- differences$NP
+s$NPC <- differences$NPC
+s$LP <- differences$LP
+s$PDP <- differences$PDP
+
+colors <- c("#67001f", "#b2182b", "#d6604d", "#f4a582", "#fddbc7", "#d1e5f0", "#92c5de", "#4393c3", "#2166ac", "#053061")
+unique(cut(s$NP, breaks = 10))
+
+colorListNP <- map2color(differences$NP, heat.colors(100))
+plot(s, col = colorListNP, main = "Difference in the Average % of Votes Received per \n Candidate in Nacionalista Party")
+
+mapNP <- ggplot() + geom_polygon(data = s, aes(x = long, y = lat, fill = s$NP)) + scale_color_gradient2(midpoint=0, low="blue", mid="white", high="red")
+mapNP
+```
+
+```{r, echo = FALSE, warnings = FALSE}
+colorListNPC <- map2color(differences$NPC, heat.colors(100))
+plot(s, col = colorListNPC, main = "Difference in the Average % of Votes Received per \n Candidate in Nationalist People's Coalition")
+```
+
+```{r, echo = FALSE, warnings = FALSE}
+colorListLP <- map2color(differences$LP, heat.colors(100))
+plot(s, col = colorListLP, main = "Difference in the Average % of Votes Received per \n Candidate in Liberal Party")
+```
+
+```{r, echo = FALSE, warnings = FALSE}
+colorListPDP <- map2color(differences$PDP, heat.colors(100))
+plot(s, col = colorListPDP, main = "Difference in the Average % of Votes Received per \n Candidate in People's Democratic Party")
+```
+
+### Do members of the same party perform equally well?
+
+Across 4 major parties, there is at least one member of the party who received a significantly different share of votes per province in comparison to the other members of the party at a significance level of 0.05.
+```{r, echo = FALSE, warnings = FALSE}
+NPindex <- which(endsWith(colnames(ELEC19), "..NP."))
+LPindex <- which(endsWith(colnames(ELEC19), "..LP."))
+NPCindex <- which(endsWith(colnames(ELEC19), "..NPC."))
+PDPindex <- which(endsWith(colnames(ELEC19), "..PDPLBN."))
+INDindex <- which(endsWith(colnames(ELEC19), "..IND."))
+
+NPsumm <- data.frame(name = c(), votes = c())
+for (i in NPindex){
+  x = data.frame(name = rep(colnames(ELEC19)[i], 84), votes = ELEC19[,i])
+  NPsumm <- rbind(NPsumm, x)
+}
+
+LPsumm <- data.frame(name = c(), votes = c())
+for (i in LPindex){
+  x = data.frame(name = rep(colnames(ELEC19)[i], 84), votes = ELEC19[,i])
+  LPsumm <- rbind(LPsumm, x)
+}
+
+NPCsumm <- data.frame(name = c(), votes = c())
+for (i in NPCindex){
+  x = data.frame(name = rep(colnames(ELEC19)[i], 84), votes = ELEC19[,i])
+  NPCsumm <- rbind(NPCsumm, x)
+}
+
+
+PDPsumm <- data.frame(name = c(), votes = c())
+for (i in PDPindex){
+  x = data.frame(name = rep(colnames(ELEC19)[i], 84), votes = ELEC19[,i])
+  PDPsumm <- rbind(PDPsumm, x)
+}
+
+summary(aov(votes ~ name, data = NPsumm))
+summary(aov(votes ~ name, data = NPCsumm))
+summary(aov(votes ~ name, data = LPsumm))
+summary(aov(votes ~ name, data = PDPsumm))
+
+pairwise.t.test(NPsumm$votes, g = NPsumm$name, p.adj = "none") 
+pairwise.t.test(NPCsumm$votes, g = NPCsumm$name, p.adj = "none") 
+pairwise.t.test(LPsumm$votes, g = LPsumm$name, p.adj = "none") 
+pairwise.t.test(PDPsumm$votes, g = PDPsumm$name, p.adj = "none") 
+```
+
+
